@@ -10,6 +10,7 @@ import asyncio
 from dotenv import load_dotenv
 from khl import Bot, Message
 from manager import BuildManager
+from threading import Thread
 
 # 加载环境变量
 load_dotenv()
@@ -104,6 +105,26 @@ if __name__ == "__main__":
         asyncio.get_event_loop()
     except RuntimeError:
         asyncio.set_event_loop(asyncio.new_event_loop())
+
+
+    def start_web_server():
+        """启动一个极简的 Web 服务器，用于通过 Render 的端口检测"""
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+
+        class HealthHandler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"OK")
+
+        port = int(os.environ.get("PORT", 10000))
+        server = HTTPServer(("0.0.0.0", port), HealthHandler)
+        print(f"✅ 健康检查 Web 服务器已启动，监听端口 {port}")
+        server.serve_forever()
+
+
+    # 在后台线程中启动 Web 服务器
+    Thread(target=start_web_server, daemon=True).start()
 
     print("🤖 阿尔比恩装备推荐机器人 (模块化) 启动中...")
     print("装备描述自动从括号中提取，缺失装备显示'无'。")
