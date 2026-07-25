@@ -6,6 +6,7 @@
 """
 
 import os
+import asyncio
 from dotenv import load_dotenv
 from khl import Bot, Message
 from manager import BuildManager
@@ -98,6 +99,12 @@ async def on_message(msg: Message):
 
 # ========== 启动 ==========
 if __name__ == "__main__":
+    # === 修复事件循环缺失问题 ===
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
     print("🤖 阿尔比恩装备推荐机器人 (模块化) 启动中...")
     print("装备描述自动从括号中提取，缺失装备显示'无'。")
     try:
