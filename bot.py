@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from khl import Bot, Message
 from manager import BuildManager
 from threading import Thread
+from ai_client import get_qwen_response
 
 # 加载环境变量
 load_dotenv()
@@ -67,6 +68,17 @@ async def on_message(msg: Message):
 
     if sub_cmd == "list":
         await msg.reply("请指定模块：`!albion pve list` 或 `!albion pvp list`")
+        return
+
+    if sub_cmd in ("ai", "ask"):
+        if len(parts) < 3:
+            await msg.reply("请提出你的问题，例如：`!ai 阿尔比恩单手斧如何配装？`")
+            return
+        question = " ".join(parts[2:])
+        # 发送“正在思考...”提示，避免用户等待无反馈
+        await msg.reply("🤔 正在思考，请稍候...")
+        reply = get_qwen_response(question)
+        await msg.reply(reply)
         return
 
     # 处理 pve / pvp
