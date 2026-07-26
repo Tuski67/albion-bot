@@ -48,67 +48,77 @@ async def on_message(msg: Message):
         return
 
     content = msg.content.strip()
-    if not content.startswith("!albion"):
+    if not (content.startswith("!albion") or content.startswith("!ai")):
         return
 
     parts = content.split()
     if len(parts) < 2:
-        await msg.reply(get_help_text())
+        # 如果只输入了 !albion 或 !ai，展示帮助
+        if content.startswith("!ai"):
+            await msg.reply("请提出你的问题，例如：`!ai 阿尔比恩单手斧如何配装？`")
+        else:
+            await msg.reply(get_help_text())
         return
 
-    sub_cmd = parts[1].lower()
+    # 根据命令前缀分支处理
+    cmd = parts[0].lower()  # 获取实际命令前缀
 
-    if sub_cmd == "help":
-        await msg.reply(get_help_text())
-        return
-
-    if sub_cmd == "random":
-        await msg.reply(manager.random_build())
-        return
-
-    if sub_cmd == "list":
-        await msg.reply("请指定模块：`!albion pve list` 或 `!albion pvp list`")
-        return
-
-    if sub_cmd in ("ai", "ask"):
-        if len(parts) < 3:
+    # ===== 处理 !ai 命令 =====
+    if cmd == "!ai":
+        question = " ".join(parts[1:])
+        if not question:
             await msg.reply("请提出你的问题，例如：`!ai 阿尔比恩单手斧如何配装？`")
             return
-        question = " ".join(parts[2:])
-        # 发送“正在思考...”提示，避免用户等待无反馈
         await msg.reply("🤔 正在思考，请稍候...")
         reply = get_qwen_response(question)
         await msg.reply(reply)
         return
 
-    # 处理 pve / pvp
-    if sub_cmd in ("pve", "pvp"):
-        if len(parts) < 3:
-            await msg.reply(f"请指定武器名称，例如 `!albion {sub_cmd} 单手斧`")
-            return
-        second = parts[2].lower()
-        if second == "list":
-            await msg.reply(build_list_message(sub_cmd))
-            return
-        weapon_input = " ".join(parts[2:])
-        key, build = manager.match_weapon(weapon_input, sub_cmd)
-        if key and build:
-            image_url = manager.get_image_url(key, sub_cmd)
-            await msg.reply(build.to_message(key, sub_cmd, image_url))
-        else:
-            await msg.reply(f"❌ 在 {sub_cmd.upper()} 模块中未找到「{weapon_input}」。")
-        return
+    # ===== 处理 !albion 命令 =====
+    if cmd == "!albion":
+        sub_cmd = parts[1].lower() if len(parts) > 1 else ""
 
-    # 无子命令，同时展示 PVE 和 PVP
-    weapon_input = " ".join(parts[1:])
-    matches = manager.match_any(weapon_input)
-    if not matches:
-        await msg.reply(f"❌ 未找到「{weapon_input}」的配装信息（PVE和PVP均无）。\n请使用 `!albion pve list` 或 `!albion pvp list` 查看可用武器。")
-        return
+        if sub_cmd == "help":
+            await msg.reply(get_help_text())
+            return
 
-    for key, build, module in matches:
-        image_url = manager.get_image_url(key, module)
-        await msg.reply(build.to_message(key, module, image_url))
+        if sub_cmd == "random":
+            await msg.reply(manager.random_build())
+            return
+
+        if sub_cmd == "list":
+            await msg.reply("请指定模块：`!albion pve list` 或 `!albion pvp list`")
+            return
+
+        # 处理 pve / pvp
+        if sub_cmd in ("pve", "pvp"):
+            if len(parts) < 3:
+                await msg.reply(f"请指定武器名称，例如 `!albion {sub_cmd} 单手斧`")
+                return
+            second = parts[2].lower()
+            if second == "list":
+                await msg.reply(build_list_message(sub_cmd))
+                return
+            weapon_input = " ".join(parts[2:])
+            key, build = manager.match_weapon(weapon_input, sub_cmd)
+            if key and build:
+                image_url = manager.get_image_url(key, sub_cmd)
+                await msg.reply(build.to_message(key, sub_cmd, image_url))
+            else:
+                await msg.reply(f"❌ 在 {sub_cmd.upper()} 模块中未找到「{weapon_input}」。")
+            return
+
+        # 无子命令，同时展示 PVE 和 PVP
+        weapon_input = " ".join(parts[1:])
+        matches = manager.match_any(weapon_input)
+        if not matches:
+            await msg.reply(f"❌ 未找到「{weapon_input}」的配装信息（PVE和PVP均无）。\n请使用 `!albion pve list` 或 `!albion pvp list` 查看可用武器。")
+            return
+
+        for key, build, module in matches:
+            image_url = manager.get_image_url(key, module)
+            await msg.reply(build.to_message(key, module, image_url))
+        return
 
 # ========== 启动 ==========
 if __name__ == "__main__":

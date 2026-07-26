@@ -20,7 +20,7 @@ client = OpenAI(api_key=api_key, base_url=base_url)
 def get_qwen_response(prompt: str, system_prompt: str = None) -> str:
     """调用通义千问模型获取回复"""
     if system_prompt is None:
-        system_prompt = "你是一个游戏助手，回答关于阿尔比恩OL的问题，提供清晰、有用的建议。"
+        system_prompt = "你是一个游戏助手，回答关于阿尔比恩OL的问题，提供清晰、有用的建议，记住以前的问题和回复，逐渐更新自己数据库。"
 
     try:
         completion = client.chat.completions.create(
